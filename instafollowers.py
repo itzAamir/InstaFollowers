@@ -5,6 +5,10 @@ import selenium
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.firefox import GeckoDriverManager
+from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 import pyautogui
 from time import sleep
 import random
@@ -19,17 +23,40 @@ try:
 except:
     driver = webdriver.Firefox(executable_path=GeckoDriverManager().install())
 
-#function to follow followers of insta pages
-def follow():
-    a = 1
-    try :
-        while a == 1:
-            driver.find_element_by_class_name('fr66n').click()
-            driver.find_element_by_css_selector("a._65Bje.coreSpriteRightPaginationArrow").click()
-            pyautogui.sleep(2)
-    except Exception as e :
+
+# Like Posts and Get back to Followers Page
+def like():
+    try:
+        photo = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CLASS_NAME , "_9AhH0"))
+        )
+        photo.click()
+    except:
+        driver.back()
+    
+    for i in range(10):
+        print("Liking Posts...")
+        try:
+            like_button = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.XPATH , "/html/body/div[4]/div[2]/div/article/div[3]/section[1]/span[1]/button/div/span"))
+            )
+            like_button.click()
+
+            next_button = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.CLASS_NAME , "coreSpriteRightPaginationArrow"))
+            )
+            next_button.click()
+        except Exception as e:
+            print(e)
+            driver.back()
+
+    try:
+        close_btn = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH , '/html/body/div[4]/div[3]/button/div/svg'))
+        )
+        close_btn.click()
+    except Exception as e:
         print(e)
-       # driver.quit()
 
 
 # Function to login Instagram
@@ -94,54 +121,29 @@ def INSTA_LOGIN():
     follow_btn = driver.find_element_by_xpath('//*[@id="react-root"]/section/main/div/header/section/ul/li[2]/a')
     follow_btn.click()
     sleep(3)
-    #opening followers profile 
-    driver.find_element_by_xpath('/html/body/div[5]/div/div/div[2]/ul/div/li[1]/div/div[2]').click()
 
 
+    #Follow all the users except who is already been followed    
+    ul = driver.find_elements_by_class_name("PZuss")[0]
+    users = ul.find_elements_by_tag_name("li")
+    for user in users:
+        user.find_elements_by_class_name("_6q-tv")[0].click()
+        try:
+            print("\nSearching Follow Button")
+            follow_button = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.CLASS_NAME , '_5f5mN'))
+            )
+        except selenium.common.exceptions.StaleElementReferenceException:
+            driver.back()
+        
+        else:
+            print("\nFollow Button Found")
+            if follow_button.text == "Follow":
+                follow_button.click()
+                like()
+                driver.back()
+                sleep(3)
+            
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-INSTA_LOGIN()    
-
-
-    
-
-
-
-
-
-
-
-
-
+if __name__ == "__main__":
+    INSTA_LOGIN()
